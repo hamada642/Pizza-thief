@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>سارق البيتزا - إصدار نهائي</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body,html{margin:0;height:100%;overflow:hidden;background:#000}
+  canvas{display:block;background:#333}
+  #passwordScreen{background:linear-gradient(#600,#000);color:#fff;text-align:center;padding-top:20vh;height:100vh}
+  input,button{padding:14px 28px;font-size:22px;border-radius:12px;border:none;margin:10px}
+  button{background:#c00;color:#fff}
+
+  /* أزرار موبايل صغيرة أنيقة وما تغطيش اللعبة */
+  #mobileBtns{
+    position:fixed;
+    bottom:12px;
+    left:12px;
+    right:12px;
+    height:90px;
+    pointer-events:none;
+    z-index:99;
+  }
+  .mb{
+    width:62px;
+    height:62px;
+    border-radius:50%;
+    border:none;
+    font-size:28px;
+    pointer-events:auto;
+    opacity:0.78;
+    box-shadow:0 4px 12px rgba(0,0,0,0.6);
+    transition:all 0.15s;
+  }
+  .mb:active{transform:scale(0.92); opacity:1}
+  #left{ position:absolute; left:15px; bottom:15px; background:#333}
+  #right{ position:absolute; left:90px; bottom:15px; background:#333}
+  #jump{ position:absolute; left:52px; bottom:75px; background:#0a0; color:#0f0}
+  #box{ position:absolute; right:15px; bottom:15px; background:#840}
+  #water{ position:absolute; right:90px; bottom:15px; background:#07f}
+  #light{ position:absolute; right:52px; bottom:75px; background:#ff0; color:#000}
+
+  /* إخفاء الأزرار تمامًا على الكمبيوتر */
+  @media (min-width:900px){
+    #mobileBtns{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div id="passwordScreen">
+  <h1>سارق البيتزا</h1>
+  <input type="password" id="pass" placeholder="كلمة السر">
+  <br><button onclick="checkPass()">دخول</button>
+</div>
+
+<canvas id="c"></canvas>
+
+<!-- أزرار الموبايل الصغيرة الأنيقة -->
+<div id="mobileBtns">
+  <button class="mb" id="left">←</button>
+  <button class="mb" id="right">→</button>
+  <button class="mb" id="jump">↑</button>
+  <button class="mb" id="box">رمي</button>
+  <button class="mb" id="water">رش</button>
+  <button class="mb" id="light">نور</button>
+</div>
+
+<script>
+// كلمة السر — غيّرها براحتك
+const PASSWORD = "pizza2025";
+
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+canvas.width = innerWidth; canvas.height = innerHeight;
+
+let score = 0, speed = 4, gameActive = true;
+const player = {x:100, y:canvas.height-200, w:80, h:120, onGround:true};
+const thief = {x:canvas.width-200, y:canvas.height-180, w:70, h:100, slip:0};
+let boxes = [], waters = [], lightsOn = true, keys = {}, audioCtx;
+
+function checkPass(){
+  if(document.getElementById("pass").value === PASSWORD){
+    document.getElementById("passwordScreen").remove();
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    initControls();
+    gameLoop();
+  }else alert("كلمة السر غلط!");
+}
+
+// باقي كود الصوت واللعبة نفس اللي فات (مضغوط عشان الرسالة)
+// … (نفس كل حاجة من الإصدارات السابقة: قفز، رمي، مياه، نور، صوت، إلخ)
+
+function initControls(){
+  // كيبورد
+  onkeydown = e => keys[e.key] = 1;
+  onkeyup = e => keys[e.key] = null;
+
+  // أزرار الموبايل
+  const map = {left:"ArrowLeft", right:"ArrowRight", jump:" ", box:"x", water:"z", light:"c"};
+  Object.keys(map).forEach(id=>{
+    const b = document.getElementById(id);
+    b.ontouchstart = e => {e.preventDefault(); keys[map[id]]=1};
+    b.ontouchend = () => keys[map[id]]=null;
+    b.onmousedown = () => keys[map[id]]=1;
+    b.onmouseup = b.onmouseleave = () => keys[map[id]]=null;
+  });
+}
+
+// … (نفس كود اللعبة كامل من الإصدار السابق)
+
+</script>
+</body>
+</html>
