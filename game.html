@@ -3,35 +3,30 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>سارق البيتزا 🍕 - نسخة موسيقية</title>
+<title>سارق البيتزا 🍕</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body, html { margin:0; padding:0; height:100%; overflow:hidden; background:#000; font-family:Arial; }
+body, html { margin:0; padding:0; height:100%; overflow:hidden; background:#111; font-family:Arial, sans-serif; }
 #passwordScreen { background: linear-gradient(#400, #000); color:#fff; text-align:center; padding-top:15vh; height:100vh; }
 input, button { padding:15px 25px; font-size:22px; border-radius:12px; margin:10px; border:none; }
 button { background:#c00; color:#fff; cursor:pointer; }
 canvas { display:block; background:#222; }
 #UI { position:absolute; top:10px; left:10px; color:#fff; font-size:24px; z-index:10; }
 #gameOver { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); color:#f33; text-align:center; padding-top:20vh; display:none; font-size:40px; }
-#mobileControls { position:fixed; bottom:0; left:0; width:100%; height:160px; pointer-events:none; z-index:20; opacity:0.9; display:flex; justify-content:center; align-items:flex-end; gap:10px; }
-.controlBtn { width:60px; height:60px; border-radius:50%; border:none; background:#666; color:#fff; font-size:24px; font-weight:bold; pointer-events:auto; box-shadow:0 3px 8px rgba(0,0,0,0.4); transition:transform 0.1s; display:flex; align-items:center; justify-content:center; }
-.controlBtn:active { transform:scale(0.95); filter:brightness(1.2); }
-#left::after{ content:"←"; }
-#right::after{ content:"→"; }
-#jump::after{ content:"⤴"; }
-#throw::after{ content:"📦"; }
-#water::after{ content:"💦"; }
-#light::after{ content:"💡"; }
-@media (min-width:768px){ .controlBtn{width:50px;height:50px;font-size:18px;} #mobileControls{opacity:0.3;} }
-</style>
+
+/* أزرار التحكم للموبايل */
+#mobileControls { position:fixed; bottom:0; left:0; width:100%; height:160px; display:flex; justify-content:center; align-items:flex-end; gap:10px; z-index:20; }
+.controlBtn { width:60px; height:60px; border-radius:50%; background:#444; color:#fff; font-size:30px; display:flex; justify-content:center; align-items:center; user-select:none; touch-action:none; }
+.controlBtn:active { transform:scale(0.95); background:#666; }
+@media (min-width:768px){ .controlBtn{width:50px;height:50px;font-size:24px;} } </style>
+
 </head>
 <body>
 
 <div id="passwordScreen">
   <h1>🍕 سارق البيتزا 🍕</h1>
   <p>اللعبة خاصة جدًا</p>
-  <input type="password" id="pass" placeholder="ادخل كلمة السر" autocomplete="off">
-  <br>
+  <input type="password" id="pass" placeholder="ادخل كلمة السر" autocomplete="off"><br>
   <button onclick="checkPass()">دخول</button>
 </div>
 
@@ -40,12 +35,12 @@ canvas { display:block; background:#222; }
 <canvas id="c"></canvas>
 
 <div id="mobileControls">
-  <button id="left" class="controlBtn" title="يسار"></button>
-  <button id="right" class="controlBtn" title="يمين"></button>
-  <button id="jump" class="controlBtn" title="قفز"></button>
-  <button id="throw" class="controlBtn" title="رمي كرتون"></button>
-  <button id="water" class="controlBtn" title="رش مياه"></button>
-  <button id="light" class="controlBtn" title="إطفاء نور"></button>
+  <div id="left" class="controlBtn">←</div>
+  <div id="right" class="controlBtn">→</div>
+  <div id="jump" class="controlBtn">⤴</div>
+  <div id="throw" class="controlBtn">📦</div>
+  <div id="water" class="controlBtn">💧</div>
+  <div id="light" class="controlBtn">💡</div>
 </div>
 
 <script>
@@ -53,17 +48,18 @@ const PASSWORD = "pizza2025";
 let audioCtx, bgInterval, slipCooldown=0;
 
 function initAudio(){ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-function playTone(freq,dur=0.1,type='sine',vol=0.2){
+
+function playTone(freq, dur=0.1, type='sine', vol=0.2){
   if(!audioCtx) return;
   const osc=audioCtx.createOscillator();
   const gain=audioCtx.createGain();
   osc.connect(gain); gain.connect(audioCtx.destination);
-  osc.frequency.setValueAtTime(freq,audioCtx.currentTime);
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
   osc.type=type;
-  gain.gain.setValueAtTime(vol,audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+dur);
+  gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
   osc.start(audioCtx.currentTime);
-  osc.stop(audioCtx.currentTime+dur);
+  osc.stop(audioCtx.currentTime + dur);
 }
 
 function playSlip(){ playTone(700,0.12,'sawtooth',0.25); setTimeout(()=>playTone(500,0.12,'sawtooth',0.25),60); setTimeout(()=>playTone(300,0.25,'sawtooth',0.3),120); }
@@ -76,14 +72,14 @@ function playLightToggle(){ playTone(1200,0.1,'sine',0.2); }
 function playEscape(){ playTone(350,0.18,'triangle',0.22); }
 
 function checkPass(){
-  if(document.getElementById("pass").value===PASSWORD){
+  if(document.getElementById("pass").value === PASSWORD){
     document.getElementById("passwordScreen").style.display="none";
     initAudio();
     initControls();
     startGame();
-  }else{ alert("كلمة السر غلط 😡"); }
+  } else { alert("كلمة السر غلط 😡"); }
 }
-document.getElementById("pass").addEventListener("keyup", e=>e.key==="Enter"&&checkPass());
+document.getElementById("pass").addEventListener("keyup", e=>e.key==="Enter" && checkPass());
 
 const canvas=document.getElementById("c");
 const ctx=canvas.getContext("2d");
@@ -99,7 +95,8 @@ let boxes=[], waters=[], lightsOn=true, keys={};
 function initControls(){
   document.addEventListener("keydown", e=> keys[e.key]="1");
   document.addEventListener("keyup", e=> keys[e.key]=null);
-  const controls={left:'ArrowLeft', right:'ArrowRight', jump:' ', throw:'x', water:'z', light:'c'};
+
+  const controls = {left:'ArrowLeft', right:'ArrowRight', jump:' ', throw:'x', water:'z', light:'c'};
   Object.keys(controls).forEach(id=>{
     const btn=document.getElementById(id);
     btn.addEventListener('touchstart', e=>{ e.preventDefault(); keys[controls[id]]="1"; });
@@ -112,13 +109,13 @@ function initControls(){
 
 function spawnBox(){ boxes.push({x:player.x+100,y:player.y+40,vx:12,vy:-3,w:60,h:60}); playBoxThrow(); }
 function spawnWater(){ waters.push({x:player.x+100,y:player.y+60,life:60}); playWaterSplash(); }
-function drawPizza(x,y,size=40){ ctx.fillStyle="#f90"; ctx.beginPath(); ctx.arc(x,y,size); ctx.fill(); ctx.fillStyle="#c33"; ctx.beginPath(); ctx.arc(x,y,size*0.7); ctx.fill(); }
+function drawPizza(x,y,size=40){ ctx.fillStyle="#f90"; ctx.beginPath(); ctx.arc(x,y,size,0,2*Math.PI); ctx.fill(); ctx.fillStyle="#c33"; ctx.beginPath(); ctx.arc(x,y,size*0.7,0,2*Math.PI); ctx.fill(); }
 
 function startGame(){
   const scale=[196,220,247,262,294,330,370,392,440,494,554,587];
   bgInterval=setInterval(()=>{
     const idx=Math.floor(Date.now()/700)%scale.length;
-    playTone(scale[idx],0.4,'square',0.07);
+    playTone(scale[idx],0.3,'square',0.05);
   },380);
   gameLoop();
 }
@@ -130,34 +127,44 @@ function gameLoop(){
   ctx.fillStyle="#444"; ctx.fillRect(0,canvas.height-100,canvas.width,100);
   for(let i=0;i<canvas.width;i+=120){ ctx.fillStyle="#654"; ctx.fillRect(i,canvas.height-180,80,80); }
 
-  if(keys["ArrowRight"]||keys["د"]) player.x+=9;
-  if(keys["ArrowLeft"]||keys["ا"]) player.x-=9;
-  if((keys[" "]||keys["ArrowUp"]||keys["و"]) && player.onGround){ player.y-=20; player.onGround=false; playJump(); }
+  if(keys["ArrowRight"] || keys["د"]) player.x+=9;
+  if(keys["ArrowLeft"] || keys["ا"]) player.x-=9;
+  if((keys[" "] || keys["ArrowUp"] || keys["و"]) && player.onGround){ player.y-=20; player.onGround=false; playJump(); }
   player.y+=8; if(player.y>canvas.height-200) player.y=canvas.height-200; player.onGround=true;
 
-  thief.x-=speed; if(thief.slip>0){ thief.slip--; thief.x-=4; }
+  thief.x-=speed;
+  if(thief.slip>0){ thief.slip--; thief.x-=4; }
   if(thief.x<-100){ thief.x=canvas.width+100; speed+=0.5; score+=500; playEscape(); return requestAnimationFrame(gameLoop); }
 
-  if(keys["x"]||keys["س"]){ if(Math.random()<0.15) spawnBox(); }
-  if(keys["z"]||keys["ز"]){ if(Math.random()<0.2) spawnWater(); }
-  if(keys["c"]||keys["ع"]){ lightsOn=!lightsOn; playLightToggle(); keys["c"]=keys["ع"]=null; }
+  if(keys["x"] || keys["س"]){ if(Math.random()<0.15) spawnBox(); }
+  if(keys["z"] || keys["ز"]){ if(Math.random()<0.2) spawnWater(); }
+  if(keys["c"] || keys["ع"]){ lightsOn=!lightsOn; playLightToggle(); keys["c"]=keys["ع"]=null; }
 
   boxes.forEach((b,i)=>{ b.x+=b.vx; b.vy+=0.4; b.y+=b.vy; ctx.fillStyle="#840"; ctx.fillRect(b.x,b.y,b.w,b.h); ctx.fillStyle="#fb0"; ctx.fillRect(b.x+10,b.y+10,b.w-20,b.h-20);
     if(b.x>thief.x && b.x<thief.x+thief.width && Math.abs(b.y-thief.y)<80){ thief.slip=80; score+=100; playHit(); boxes.splice(i,1); }
-    if(b.y>canvas.height) boxes.splice(i,1); });
+    if(b.y>canvas.height) boxes.splice(i,1);
+  });
 
   waters.forEach((w,i)=>{ for(let j=0;j<15;j++){ ctx.fillStyle="rgba(0,150,255,0.4)"; ctx.fillRect(w.x+Math.random()*200-100, player.y+60+j*10,8,40); }
-    if(w.x<thief.x+100 && w.x>thief.x-200){ thief.slip=100; score+=150; playHit(); } w.life--; if(w.life<=0) waters.splice(i,1); });
+    if(w.x<thief.x+100 && w.x>thief.x-200){ thief.slip=100; score+=150; playHit(); }
+    w.life--; if(w.life<=0) waters.splice(i,1);
+  });
 
-  if(slipCooldown>0) slipCooldown--; if(thief.slip>20 && slipCooldown<=0){ playSlip(); slipCooldown=40; }
+  if(slipCooldown>0) slipCooldown--;
+  if(thief.slip>20 && slipCooldown<=0){ playSlip(); slipCooldown=40; }
 
   ctx.fillStyle=player.color; ctx.fillRect(player.x,player.y,player.width,player.height);
-  ctx.fillStyle="#fff"; ctx.fillRect(player.x+15,player.y+20,50,50); drawPizza(player.x+40,player.y-20,30);
+  ctx.fillStyle="#fff"; ctx.fillRect(player.x+15,player.y+20,50,50);
+  drawPizza(player.x+40,player.y-20,30);
 
   ctx.fillStyle=thief.color; ctx.fillRect(thief.x,thief.y,thief.width,thief.height);
-  ctx.fillStyle="#000"; ctx.fillRect(thief.x+15,thief.y+15,40,40); ctx.fillStyle="#fff"; ctx.fillRect(thief.x+25,thief.y+25,20,20); drawPizza(thief.x+35,thief.y-25,35);
+  ctx.fillStyle="#000"; ctx.fillRect(thief.x+15,thief.y+15,40,40);
+  ctx.fillStyle="#fff"; ctx.fillRect(thief.x+25,thief.y+25,20,20);
+  drawPizza(thief.x+35,thief.y-25,35);
 
-  if(!lightsOn){ ctx.fillStyle="rgba(0,0,0,0.7)"; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.save(); ctx.beginPath(); ctx.arc(player.x+player.width/2, player.y+player.height/2, 220,0, Math.PI*2); ctx.clip(); ctx.fillStyle="#555"; ctx.fillRect(0, canvas.height-100, canvas.width, 100); ctx.restore(); }
+  if(!lightsOn){ ctx.fillStyle="rgba(0,0,0,0.7)"; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.save(); ctx.beginPath();
+    ctx.arc(player.x+player.width/2, player.y+player.height/2, 220,0, Math.PI*2); ctx.clip(); ctx.fillStyle="#555"; ctx.fillRect(0, canvas.height-100, canvas.width, 100); ctx.restore();
+  }
 
   document.getElementById("score").innerText=score;
 
