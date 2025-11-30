@@ -1,89 +1,492 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="ar">
 <head>
-<meta charset="UTF-8">
-<title>Pizza Theft Game - Locked</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Pizza Thief — 2.5D Edition</title>
 <style>
-    body {
-        margin: 0;
-        background: #111;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        font-family: Arial, sans-serif;
-        color: white;
-    }
-
-    #password-screen {
-        background: #222;
-        padding: 30px;
-        border-radius: 15px;
-        text-align: center;
-        width: 300px;
-        box-shadow: 0px 0px 15px #000;
-    }
-
-    input {
-        width: 90%;
-        padding: 12px;
-        margin-top: 15px;
-        border-radius: 8px;
-        border: none;
-        outline: none;
-        font-size: 16px;
-        text-align: center;
-    }
-
-    button {
-        margin-top: 15px;
-        width: 95%;
-        padding: 12px;
-        background: #ff9800;
-        color: #000;
-        font-weight: bold;
-        font-size: 17px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-    }
-
-    button:hover {
-        background: #ffa726;
-    }
-
-    #game-container {
-        display: none; /* اللعبة مخفية حتى يدخل الباسورد */
-    }
+  :root{
+    --bg-1:#071022; --panel:rgba(255,255,255,0.03);
+    --accent:#10b981; --danger:#ef4444; --text:#e6eef6;
+  }
+  html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;direction:rtl}
+  body{background:linear-gradient(180deg,var(--bg-1),#001424);color:var(--text);display:flex;align-items:center;justify-content:center;padding:12px}
+  .game-wrap{width:980px;max-width:98vw;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12));border-radius:12px;box-shadow:0 16px 50px rgba(0,0,0,0.6);padding:12px;position:relative;overflow:hidden}
+  canvas{display:block;border-radius:10px;width:100%;height:auto;background:linear-gradient(180deg,#071227,#001827)}
+  .hud{display:flex;justify-content:space-between;margin-top:10px;align-items:center;z-index:8;position:relative}
+  .badge{background:var(--panel);padding:8px 12px;border-radius:10px;font-weight:800}
+  .center{display:flex;gap:8px;align-items:center}
+  .hint{opacity:0.9;font-size:13px}
+  .overlay{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;align-items:center;justify-content:center;pointer-events:auto}
+  .panel{background:rgba(3,7,18,0.96);padding:18px;border-radius:12px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.6);max-width:92%;color:#dbeafe}
+  .panel h1{margin:0 0 8px 0;font-size:22px}
+  .panel p{margin:6px 0 12px 0;color:#9fb0d3}
+  .btn{background:var(--accent);color:white;padding:8px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:800}
+  .btn.red{background:var(--danger)}
+  .tiny{font-size:12px;padding:6px 10px;border-radius:8px}
+  .controls{position:absolute;left:8px;right:8px;bottom:12px;display:flex;justify-content:space-between;pointer-events:none;z-index:9}
+  .touch-btn{width:78px;height:56px;border-radius:10px;background:rgba(255,255,255,0.03);backdrop-filter: blur(2px);display:flex;align-items:center;justify-content:center;pointer-events:auto;user-select:none}
+  .touch-btn:active{transform:translateY(2px)}
+  .control-left{opacity:0.95}
+  .control-right{opacity:0.95}
+  .control-jump{position:relative;opacity:0.98}
+  .gear{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:6px 8px;border-radius:8px;cursor:pointer;color:#cbd5e1}
+  input[type="password"], input[type="text"]{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text);box-sizing:border-box}
+  footer{margin-top:10px;text-align:center;color:#9fb0d3;font-size:12px}
+  @media (max-width:520px){
+    .touch-btn{width:64px;height:56px}
+  }
 </style>
 </head>
 <body>
+<div class="game-wrap" id="wrap">
+  <canvas id="game" width="960" height="540"></canvas>
 
-<!-- شاشة الباسورد -->
-<div id="password-screen">
-    <h2>Enter Password</h2>
-    <input type="password" id="passInput" placeholder="Enter password">
-    <button onclick="checkPass()">Unlock</button>
-    <p id="msg" style="color:red; margin-top:10px;"></p>
-</div>
+  <div class="hud" style="position:relative;z-index:8">
+    <div style="display:flex;gap:10px;align-items:center">
+      <div class="badge">النتيجة: <span id="score">0</span></div>
+      <div class="badge">حياتك: <span id="lives">3</span></div>
+    </div>
+    <div class="center hint">تحكم: أسهم / A,D أو أزرار اللمس. اجمع البيتزا واحميها من السارق.</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button id="settingsBtn" class="gear" title="الإعدادات">⚙️</button>
+      <button id="restart" class="btn tiny" title="إعادة">إعادة</button>
+    </div>
+  </div>
 
-<!-- هنا ضع اللعبة اللي هنعملها بعدين -->
-<div id="game-container">
-    <h1 style="color:white; text-align:center;">Game Loaded!</h1>
-    <!-- اللعبة هتضاف هنا -->
+  <!-- شاشة الباسسورد -->
+  <div id="passwordOverlay" class="overlay">
+    <div class="panel" style="width:380px">
+      <h1>قفل اللعبة - أدخل الباسسورد</h1>
+      <p>أدخل الباسسورد لبدء اللعب.</p>
+      <input id="pwdInput" type="password" placeholder="أدخل الباسسورد" />
+      <div style="display:flex;gap:8px;margin-top:10px;justify-content:center">
+        <button id="unlockBtn" class="btn">افتح</button>
+        <button id="openSettingsFromLock" class="btn tiny" style="background:#64748b">الإعدادات</button>
+      </div>
+      <p style="color:#fca5a5;margin-top:8px;font-size:13px">الباسسورد الافتراضي: <strong>samorak89</strong></p>
+    </div>
+  </div>
+
+  <!-- اوفراي الإعدادات -->
+  <div id="settingsOverlay" class="overlay" style="display:none;pointer-events:auto">
+    <div class="panel" style="width:420px">
+      <h1>الإعدادات</h1>
+      <p>غير الباسسورد أو أطفئ/شغّل الصوت.</p>
+
+      <label style="display:block;text-align:right;font-size:13px;margin-bottom:6px">تشغيل الموسيقى</label>
+      <input id="musicToggle" type="checkbox" checked />
+
+      <label style="display:block;text-align:right;font-size:13px;margin:10px 0 6px">الباسسورد الحالي</label>
+      <input id="curPwd" type="password" placeholder="الباس الحالي" />
+      <label style="display:block;text-align:right;font-size:13px;margin-top:6px">الباسسورد الجديد</label>
+      <input id="newPwd" type="password" placeholder="الباس الجديد" />
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:10px">
+        <button id="savePwd" class="btn tiny">حفظ</button>
+        <button id="closeSettings" class="btn tiny" style="background:#64748b">إغلاق</button>
+      </div>
+      <p id="settingsMsg" style="color:#9fb0d3;margin-top:8px"></p>
+    </div>
+  </div>
+
+  <!-- اوفراي نهاية اللعب -->
+  <div id="overlay" class="overlay" style="display:none;pointer-events:auto">
+    <div class="panel" style="width:420px">
+      <h1 id="overlay-title">انتهت اللعبة</h1>
+      <p id="overlay-msg">نهاية اللعبة</p>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button id="overlay-restart" class="btn">إعادة اللعب</button>
+        <button id="overlay-share" class="btn red">نسخ للمشاركة</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- أزرار لمسية -->
+  <div class="controls" style="z-index:9">
+    <div style="display:flex;gap:8px;align-items:center">
+      <div id="leftBtn" class="touch-btn control-left" title="تحرك يسار">◀</div>
+      <div id="rightBtn" class="touch-btn control-right" title="تحرك يمين">▶</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div id="jumpBtn" class="touch-btn control-jump" style="width:86px;height:86px;border-radius:16px">قفز</div>
+    </div>
+  </div>
+
+  <footer>نسخة 2.5D بسيطة — لو تريد صور (sprites) جاهزة أو أصوات ملفية أضيفها لك لاحقًا.</footer>
 </div>
 
 <script>
-function checkPass() {
-    let pass = document.getElementById("passInput").value;
-    if(pass === "samorak89") {
-        document.getElementById("password-screen").style.display = "none";
-        document.getElementById("game-container").style.display = "block";
-    } else {
-        document.getElementById("msg").innerText = "❌ Wrong password!";
-    }
-}
-</script>
+/* Pizza Thief — Full single-file game
+   - Password: default samorak89 (stored locally)
+   - 2.5D look (scale + shadow)
+   - Touch buttons + keyboard
+   - WebAudio SFX + simple music loop
+*/
 
+// ---------- إعداد الصوت ----------
+let audioCtx = null;
+let musicOn = true;
+function ensureAudio(){
+  if(!audioCtx){
+    try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+    catch(e){ console.warn('Audio not available', e); audioCtx = null; }
+  }
+}
+function playSFX(type){
+  if(!audioCtx || !musicOn) return;
+  const t = audioCtx.currentTime;
+  if(type === 'jump'){
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(520, t);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.12,t+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.28);
+    o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(t+0.28);
+  } else if(type === 'collect'){
+    const o1 = audioCtx.createOscillator(), o2 = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o1.type='triangle'; o2.type='sine';
+    o1.frequency.setValueAtTime(760,t); o2.frequency.setValueAtTime(520,t);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.18,t+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.22);
+    o1.connect(g); o2.connect(g); g.connect(audioCtx.destination);
+    o1.start(); o2.start(); o1.stop(t+0.22); o2.stop(t+0.22);
+  } else if(type === 'hit'){
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type='square'; o.frequency.setValueAtTime(160,t);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.16,t+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.45);
+    o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(t+0.45);
+  }
+}
+// simple music loop (very light)
+let musicPlaying = false;
+function startMusic(){
+  if(!audioCtx || !musicOn || musicPlaying) return;
+  musicPlaying = true;
+  const base = audioCtx.createGain(); base.gain.value = 0.06; base.connect(audioCtx.destination);
+  let step = 0;
+  function tick(){
+    if(!musicPlaying) return;
+    const now = audioCtx.currentTime;
+    const notes = [220,246,261,293,329,349,392];
+    const f = notes[step % notes.length];
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(f, now+0.01);
+    g.gain.setValueAtTime(0.0001, now+0.01); g.gain.linearRampToValueAtTime(0.12, now+0.05);
+    g.gain.linearRampToValueAtTime(0.0001, now+0.4);
+    o.connect(g); g.connect(base); o.start(now+0.01); o.stop(now+0.45);
+    step++;
+    setTimeout(tick, 400); // loop tempo
+  }
+  tick();
+}
+function stopMusic(){ musicPlaying = false; }
+
+// ---------- عناصر DOM ----------
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const scoreEl = document.getElementById('score'), livesEl = document.getElementById('lives');
+const passwordOverlay = document.getElementById('passwordOverlay'), unlockBtn = document.getElementById('unlockBtn'), pwdInput = document.getElementById('pwdInput');
+const settingsOverlay = document.getElementById('settingsOverlay'), settingsBtn = document.getElementById('settingsBtn'), closeSettings = document.getElementById('closeSettings');
+const curPwdInput = document.getElementById('curPwd'), newPwdInput = document.getElementById('newPwd'), savePwdBtn = document.getElementById('savePwd');
+const musicToggle = document.getElementById('musicToggle');
+const leftBtn = document.getElementById('leftBtn'), rightBtn = document.getElementById('rightBtn'), jumpBtn = document.getElementById('jumpBtn');
+const overlay = document.getElementById('overlay'), overlayRestart = document.getElementById('overlay-restart'), overlayShare = document.getElementById('overlay-share');
+const restartBtn = document.getElementById('restart');
+
+// ---------- باسسورد محلي ----------
+const PWD_KEY = 'pizza_thief_pwd_v2';
+const MUSIC_KEY = 'pizza_thief_music_v2';
+if(!localStorage.getItem(PWD_KEY)) localStorage.setItem(PWD_KEY, 'samorak89');
+if(localStorage.getItem(MUSIC_KEY) === null) localStorage.setItem(MUSIC_KEY, '1');
+musicOn = localStorage.getItem(MUSIC_KEY) === '1';
+musicToggle.checked = musicOn;
+
+// ---------- حالة اللعبة ----------
+let keys = {left:false,right:false,up:false};
+let score = 0, lives = 3, gameOver = false;
+const gravity = 0.9;
+const groundY = H - 100;
+const player = { x:80, y:groundY-64, w:56, h:64, vx:0, vy:0, speed:4.6, jumpPower:16, onGround:true, baseScale:1 };
+let pizzas = [], thieves = [];
+let last = 0;
+
+// ---------- رسومات تشبه 3D (scale + shadow + highlights) ----------
+function drawStoreBackground(){
+  ctx.save();
+  // gradient wall
+  const g = ctx.createLinearGradient(0,0,0,groundY);
+  g.addColorStop(0, '#052032'); g.addColorStop(1, '#071827');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,groundY);
+
+  // shelves with boxes (simple)
+  for(let r=0;r<3;r++){
+    const y = 110 + r*82;
+    ctx.fillStyle = 'rgba(255,255,255,0.02)';
+    ctx.fillRect(36, y, W-72, 12);
+    for(let i=0;i<10;i++){
+      const bx = 56 + i * ((W-120)/10);
+      // box with pseudo 3D by small light
+      ctx.save(); ctx.translate(bx, y-16);
+      ctx.fillStyle = `rgba(${90 + r*20}, ${120 - i%3*10}, ${80 + r*10}, 0.95)`;
+      roundRect(ctx, -12, -8, 24, 30, 6, true, false);
+      // highlight
+      ctx.fillStyle = 'rgba(255,255,255,0.03)'; ctx.fillRect(-10, -6, 8, 6);
+      ctx.restore();
+    }
+  }
+
+  // sign
+  ctx.fillStyle = '#071227'; ctx.fillRect(W-220, 28, 180, 48);
+  ctx.fillStyle = '#ffd166'; ctx.font = 'bold 20px sans-serif'; ctx.fillText('PIZZA SHOP', W-200, 62);
+  ctx.restore();
+}
+
+function drawPlayer(){
+  ctx.save();
+  // pseudo 3D scale based on x (small parallax)
+  const scale = 1 + Math.sin(performance.now()/600 + player.x/200)*0.02;
+  ctx.translate(player.x + player.w/2, player.y + player.h/2);
+  ctx.scale(scale, scale);
+
+  // shadow ellipse
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.beginPath(); ctx.ellipse(0, player.h/2 -6, player.w*0.6, 10, 0,0,Math.PI*2); ctx.fill();
+
+  // body
+  ctx.fillStyle = '#3b82f6';
+  roundRect(ctx, -player.w/2, -player.h/2, player.w, player.h, 10, true, false);
+
+  // eyes
+  ctx.fillStyle = '#fff'; ctx.fillRect(-12, -10, 6, 6); ctx.fillRect(6, -10, 6, 6);
+  ctx.beginPath(); ctx.strokeStyle = '#072c4a'; ctx.lineWidth = 2; ctx.arc(0, 6, 10, 0, Math.PI); ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawThief(t){
+  ctx.save();
+  // animate scale (bounce) and slight rotation for life
+  const wobble = 0.9 + Math.sin(performance.now()/250 + t.x/50)*0.06;
+  ctx.translate(t.x, t.y);
+  ctx.scale(wobble, wobble);
+
+  // shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.fillRect(-6, t.h+8, t.w+12, 6);
+
+  // body gradient
+  const g = ctx.createLinearGradient(0,0,0,t.h);
+  g.addColorStop(0, '#5a1d1d'); g.addColorStop(1, '#2b0505');
+  ctx.fillStyle = g; roundRect(ctx, 0, 0, t.w, t.h, 8, true, false);
+
+  // mask
+  ctx.fillStyle = '#000'; ctx.fillRect(8, 10, t.w-16, 12);
+  ctx.fillStyle = '#fff'; ctx.fillRect(14, 12, 6, 6); ctx.fillRect(t.w-22, 12, 6, 6);
+
+  // bag (rotating)
+  ctx.save();
+  ctx.translate(t.w/2 + 6, t.h - 22);
+  ctx.rotate(Math.sin(performance.now()/300 + t.x/40) * 0.25);
+  ctx.fillStyle = '#14532d'; roundRect(ctx, -10, -6, 20, 14, 4, true, false);
+  ctx.restore();
+
+  ctx.restore();
+}
+
+function drawPizza(p){
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  // slight bobbing
+  ctx.translate(0, Math.sin(performance.now()/300 + p.x/60) * 4);
+  ctx.beginPath(); ctx.fillStyle = '#fdd835'; ctx.arc(0,0,p.r,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.fillStyle = '#f97316'; ctx.moveTo(-p.r*0.45, -p.r*0.05); ctx.lineTo(0, p.r*0.7); ctx.lineTo(p.r*0.45, -p.r*0.05); ctx.closePath(); ctx.fill();
+  for(let i=0;i<3;i++){
+    const a = i * Math.PI*2/3 + p.wobble*0.6;
+    const rx = Math.cos(a)*(p.r*0.45);
+    const ry = Math.sin(a)*(p.r*0.45);
+    ctx.beginPath(); ctx.fillStyle = '#b91c1c'; ctx.arc(rx,ry,p.r*0.22,0,Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// helper
+function roundRect(ctx,x,y,w,h,r,fill,stroke){
+  if(typeof r === 'undefined') r=6;
+  ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+  if(fill) ctx.fill(); if(stroke) ctx.stroke();
+}
+
+// ---------- لوجيك اللعبة ----------
+function rand(min,max){ return Math.random()*(max-min)+min; }
+function spawnPizza(){ pizzas.push({ x: rand(220, W-80), y: rand(80, groundY-80), r: 14 + Math.floor(rand(0,8)), vx: rand(-0.4,0.4), wobble: Math.random()*Math.PI*2 }); }
+function spawnThief(){ thieves.push({ x: rand(260, W-140), y: groundY-74, w: 56, h: 74, speed: 1.4 + Math.random()*1.4, active: true }); }
+
+function updatePlayer(){
+  if(keys.left) player.vx = -player.speed;
+  else if(keys.right) player.vx = player.speed;
+  else player.vx *= 0.8;
+  if(keys.up && player.onGround){
+    player.vy = -player.jumpPower; player.onGround = false; playSFX('jump');
+  }
+  player.vy += gravity*0.6;
+  player.x += player.vx; player.y += player.vy;
+  if(player.x < 12) player.x = 12;
+  if(player.x + player.w > W-12) player.x = W-12-player.w;
+  if(player.y + player.h >= groundY){
+    player.y = groundY - player.h; player.vy = 0; player.onGround = true;
+  }
+}
+
+function updatePizzas(){
+  for(let i=pizzas.length-1;i>=0;i--){
+    const p = pizzas[i]; p.wobble += 0.08; p.x += p.vx;
+    if(p.x < 28 || p.x > W-28) p.vx *= -1;
+    const dx = (player.x + player.w/2) - p.x; const dy = (player.y + player.h/2) - p.y;
+    const dist = Math.hypot(dx,dy);
+    if(dist < p.r + Math.max(player.w, player.h)/2 -6){
+      pizzas.splice(i,1); score+=1; scoreEl.textContent = score; playSFX('collect'); setTimeout(spawnPizza, 700);
+      if(Math.random() < 0.3) spawnThief();
+    }
+  }
+}
+
+function rectIntersect(x1,y1,w1,h1, x2,y2,w2,h2){
+  return !(x1+w1 < x2 || x1 > x2+w2 || y1+h1 < y2 || y1 > y2+h2);
+}
+let hurtCooldown = false;
+function updateThieves(){
+  for(let t of thieves){
+    if(!t.active) continue;
+    if(player.x + player.w/2 < t.x + t.w/2) t.x -= t.speed; else t.x += t.speed;
+    if(t.x < 12) t.x = 12; if(t.x + t.w > W-12) t.x = W-12 - t.w;
+    if(rectIntersect(player.x,player.y,player.w,player.h, t.x, t.y, t.w, t.h)){
+      if(!hurtCooldown){
+        t.active = false; loseLife(); hurtCooldown = true; playSFX('hit');
+        setTimeout(()=>{ t.x = rand(120, W-160); t.active = true; hurtCooldown = false; }, 1400);
+      }
+    }
+  }
+}
+
+function loseLife(){
+  lives -= 1; livesEl.textContent = lives;
+  if(lives <= 0) endGame();
+}
+
+function endGame(){
+  gameOver = true; overlay.style.display = 'flex'; overlay.querySelector('#overlay-title').textContent = 'انتهت اللعبة';
+  overlay.querySelector('#overlay-msg').textContent = `حصلت على ${score} نقطة.`; stopMusic();
+}
+
+function resetGame(){
+  score = 0; lives = 3; scoreEl.textContent = score; livesEl.textContent = lives;
+  pizzas = []; thieves = []; player.x = 80; player.y = groundY - player.h; player.vx=0; player.vy=0; player.onGround=true;
+  overlay.style.display = 'none'; gameOver = false; passwordOverlay.style.display = 'none';
+  for(let i=0;i<3;i++) spawnPizza(); spawnThief();
+  last = performance.now(); requestAnimationFrame(loop);
+  if(musicOn){ ensureAudio(); startMusic(); }
+}
+
+// رسم المشهد
+function render(){
+  ctx.clearRect(0,0,W,H);
+  drawStoreBackground();
+  // foreground floor
+  ctx.fillStyle = '#071827'; ctx.fillRect(0, groundY, W, H-groundY);
+  ctx.fillStyle = '#0b1420'; ctx.fillRect(0, groundY+30, W, H-groundY-30);
+  for(let p of pizzas) drawPizza(p);
+  for(let t of thieves) drawThief(t);
+  drawPlayer();
+}
+
+// اللوب الرئيسي
+function loop(ts){
+  if(gameOver) return;
+  const dt = Math.min(40, ts - last);
+  last = ts;
+  updatePlayer(); updatePizzas(); updateThieves(); render();
+  requestAnimationFrame(loop);
+}
+
+// ---------- إدخال المستخدم ----------
+window.addEventListener('keydown', (e)=>{
+  if(e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
+  if(e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
+  if(e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === ' ') { keys.up = true; e.preventDefault(); }
+});
+window.addEventListener('keyup', (e)=>{
+  if(e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
+  if(e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
+  if(e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === ' ') keys.up = false;
+});
+
+// لمسات/ضغطات الأزرار
+let leftHeld=false,rightHeld=false;
+leftBtn.addEventListener('pointerdown', ()=>{ keys.left = true; leftHeld=true; });
+leftBtn.addEventListener('pointerup', ()=>{ keys.left = false; leftHeld=false; });
+leftBtn.addEventListener('pointerleave', ()=>{ if(leftHeld){ keys.left=false; leftHeld=false; }});
+rightBtn.addEventListener('pointerdown', ()=>{ keys.right = true; rightHeld=true; });
+rightBtn.addEventListener('pointerup', ()=>{ keys.right = false; rightHeld=false; });
+rightBtn.addEventListener('pointerleave', ()=>{ if(rightHeld){ keys.right=false; rightHeld=false; }});
+jumpBtn.addEventListener('pointerdown', ()=>{ keys.up = true; setTimeout(()=>{ keys.up=false; },160); });
+
+// HUD buttons
+restartBtn.addEventListener('click', ()=>{ resetGame(); });
+overlayRestart.addEventListener('click', ()=>{ resetGame(); });
+overlayShare.addEventListener('click', ()=>{ const txt = `لعبتي: Pizza Thief — نقاط: ${score}`; navigator.clipboard?.writeText(txt).then(()=>alert('نُسخ النص.')); });
+
+// ---------- باسسورد و إعدادات ----------
+unlockBtn.addEventListener('click', ()=>{
+  const entered = pwdInput.value || '';
+  const stored = localStorage.getItem(PWD_KEY) || 'samorak89';
+  if(entered === stored){
+    // create audio context after user interaction
+    ensureAudio();
+    passwordOverlay.style.display = 'none';
+    resetGame();
+    if(musicOn) startMusic();
+  } else {
+    alert('باسسورد خطأ.');
+  }
+});
+
+// settings open/close
+settingsBtn.addEventListener('click', ()=>{ settingsOverlay.style.display = 'flex'; document.getElementById('settingsMsg').textContent=''; });
+closeSettings.addEventListener('click', ()=>{ settingsOverlay.style.display = 'none'; });
+
+// toggle music
+musicToggle.addEventListener('change', ()=>{
+  musicOn = musicToggle.checked;
+  localStorage.setItem(MUSIC_KEY, musicOn ? '1' : '0');
+  if(musicOn){ ensureAudio(); startMusic(); } else stopMusic();
+});
+
+// save new password (requires current)
+savePwdBtn.addEventListener('click', ()=>{
+  const cur = curPwdInput.value || '';
+  const nw = newPwdInput.value || '';
+  const stored = localStorage.getItem(PWD_KEY) || 'samorak89';
+  if(cur !== stored){ document.getElementById('settingsMsg').style.color='tomato'; document.getElementById('settingsMsg').textContent='الباس الحالي غير صحيح.'; return; }
+  if(nw.length < 3){ document.getElementById('settingsMsg').style.color='tomato'; document.getElementById('settingsMsg').textContent='اختر باس 3 أحرف على الأقل.'; return; }
+  localStorage.setItem(PWD_KEY, nw); document.getElementById('settingsMsg').style.color='#9fb0d3'; document.getElementById('settingsMsg').textContent='تم تغيير الباس.'; curPwdInput.value=''; newPwdInput.value='';
+});
+
+// show password overlay on load
+window.addEventListener('load', ()=>{
+  passwordOverlay.style.display = 'flex';
+  // ensure a few items exist
+  if(pizzas.length === 0) for(let i=0;i<3;i++) spawnPizza();
+  if(thieves.length === 0) spawnThief();
+  scoreEl.textContent = score; livesEl.textContent = lives;
+  // render a simple idle frame so user doesn't see blank
+  drawStoreBackground();
+  ctx.fillStyle = '#071827'; ctx.fillRect(0, groundY, W, H-groundY);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 26px sans-serif'; ctx.fillText('Pizza Thief — اضغط لفتح الباسسورد', 40, 60);
+});
+
+// auto-spawn pizzas occasionally
+setInterval(()=>{ if(!gameOver && pizzas.length < 5) spawnPizza(); }, 2800);
+
+</script>
 </body>
 </html>
