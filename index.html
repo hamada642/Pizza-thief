@@ -1,345 +1,431 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<!doctype html>
+<html lang="ar">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>سارق البيتزا 🍕 - النسخة النهائية</title>
+<title>لعبة سرقة البيتزا</title>
 <style>
-:root{
-  --bg1:#071018; --bg2:#0b1720;
-  --floor:#3a2b1f;
-  --btn-size:66px;
-}
-html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg1),var(--bg2));font-family:Arial,Helvetica,sans-serif;color:#fff;overflow:hidden}
-#passwordScreen{
-  position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  background:linear-gradient(180deg,#3a0a1a88, #000000aa);z-index:80;
-  gap:10px;padding:18px;
-}
-#passwordScreen h1{margin:0;font-size:34px}
-#passwordScreen input{font-size:18px;padding:12px 14px;border-radius:10px;border:none;outline:none}
-#passwordScreen button{padding:10px 16px;border-radius:10px;border:none;background:#ff4d4d;color:#fff;font-weight:bold;cursor:pointer}
-#UI{position:fixed;top:12px;left:12px;z-index:70;background:rgba(0,0,0,0.25);padding:8px 12px;border-radius:8px;font-size:18px}
-#gameOver{position:fixed;inset:0;background:rgba(0,0,0,0.9);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:90;text-align:center}
-#gameOver h2{color:#ffd86b;margin:0 0 10px}
-canvas{display:block;width:100vw;height:100vh;background:linear-gradient(180deg,#08121a,#05060a);}
-
-/* mobile controls */
-#mobileControls{
-  position:fixed;left:0;right:0;bottom:10px;display:flex;justify-content:center;gap:10px;align-items:flex-end;z-index:75;padding:8px;pointer-events:none;
-}
-.controlBtn{
-  pointer-events:auto;width:var(--btn-size);height:var(--btn-size);border-radius:50%;
-  display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;
-  color:#fff;border:none;cursor:pointer;user-select:none;
-  box-shadow:0 6px 18px rgba(0,0,0,0.45);transition:transform .06s, filter .06s;
-}
-.controlBtn:active{transform:translateY(2px) scale(.98);filter:brightness(1.04)}
-.leftBtn{background:linear-gradient(180deg,#5fb3ff,#1f7ed6)}
-.rightBtn{background:linear-gradient(180deg,#3b82c4,#165b9a)}
-.jumpBtn{background:linear-gradient(180deg,#7de08b,#2ea94f)}
-.throwBtn{background:linear-gradient(180deg,#ff8a66,#d94a1b)}
-.waterBtn{background:linear-gradient(180deg,#66f0ff,#18a6b0)}
-.lightBtn{background:linear-gradient(180deg,#ffd86b,#f0a500)}
-@media(min-width:900px){:root{--btn-size:54px}}
-#hint{position:fixed;right:12px;top:12px;font-size:13px;color:#ddd;opacity:.9;z-index:70}
+  :root{
+    --bg:#111827;
+    --ground:#2b2b2b;
+    --player:#3b82f6;
+    --pizza:#f97316;
+    --thief:#ef4444;
+    --text:#f8fafc;
+  }
+  html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
+  body{background:linear-gradient(180deg,var(--bg) 0%, #0b1220 100%);color:var(--text);display:flex;align-items:center;justify-content:center}
+  .game-wrap{width:900px;max-width:95vw;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.15));border-radius:10px;box-shadow:0 10px 30px rgba(2,6,23,0.6);padding:16px}
+  canvas{display:block;background:linear-gradient(180deg,#071227 0%, #012031 70%);border-radius:6px;max-width:100%;}
+  .hud{display:flex;justify-content:space-between;margin-top:10px;align-items:center}
+  .hud .left, .hud .right{display:flex;gap:12px;align-items:center}
+  .badge{background:rgba(255,255,255,0.03);padding:8px 12px;border-radius:8px;font-weight:600}
+  .center{display:flex;gap:8px;align-items:center}
+  .hint{opacity:0.8;font-size:13px}
+  .overlay{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;align-items:center;justify-content:center}
+  .panel{background:rgba(3,7,18,0.8);backdrop-filter: blur(6px);padding:22px;border-radius:12px;text-align:center;box-shadow:0 6px 20px rgba(2,6,23,0.7)}
+  .panel h1{margin:0 0 8px 0;font-size:22px}
+  .panel p{margin:6px 0 12px 0;color:#cbd5e1}
+  .btn{background:#10b981;color:white;padding:8px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:700}
+  .btn.red{background:#ef4444}
+  footer{margin-top:10px;text-align:center;color:#94a3b8;font-size:12px}
+  /* responsive */
+  @media (max-width:520px){
+    .game-wrap{padding:10px}
+  }
 </style>
 </head>
 <body>
-  <div id="passwordScreen" role="dialog" aria-label="شاشة إدخال كلمة السر">
-    <h1>🍕 سارق البيتزا</h1>
-    <div style="text-align:center;color:#ffe6cc">أدخل كلمة السر للبدء</div>
-    <input id="pass" type="password" autocomplete="off" placeholder="كلمة السر" />
-    <button id="enterBtn">دخول</button>
-    <div style="margin-top:8px;color:#fff;font-size:13px;opacity:.95">كلمة السر: <strong>pizza2025</strong></div>
+<div class="game-wrap" style="position:relative">
+  <canvas id="game" width="900" height="480"></canvas>
+
+  <div class="hud" style="position:relative">
+    <div class="left">
+      <div class="badge">النتيجة: <span id="score">0</span></div>
+      <div class="badge">حياتك: <span id="lives">3</span></div>
+    </div>
+    <div class="center hint">التحكم: ← → للحركة، ↑ للقفز. اجمع البيتزا، تجنّب السارق.</div>
+    <div class="right">
+      <button id="restart" class="btn" title="إعادة اللعب">إعادة</button>
+    </div>
   </div>
 
-  <div id="UI">النقاط: <span id="score">0</span></div>
-
-  <div id="gameOver" style="display:flex">
-    <h2>تم القبض على اللص! 🎉</h2>
-    <div style="color:#fff;font-size:20px;margin-bottom:12px">النقاط: <strong id="final">0</strong></div>
-    <button onclick="location.reload()" style="padding:10px 18px;border-radius:8px;border:none;background:#2ecc71;color:#000;font-weight:bold;cursor:pointer">العب مرة ثانية</button>
+  <div id="overlay" class="overlay" style="display:none">
+    <div class="panel">
+      <h1 id="overlay-title">Game Over</h1>
+      <p id="overlay-msg">نهاية اللعبة</p>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button id="overlay-restart" class="btn">إعادة اللعب</button>
+        <button id="overlay-share" class="btn red">نسخ رابط/مشاركة</button>
+      </div>
+    </div>
   </div>
 
-  <canvas id="c"></canvas>
-
-  <div id="mobileControls" aria-hidden="false">
-    <button id="left" class="controlBtn leftBtn" aria-label="يسار">←</button>
-    <button id="right" class="controlBtn rightBtn" aria-label="يمين">→</button>
-    <button id="jump" class="controlBtn jumpBtn" aria-label="قفز">⤴</button>
-    <button id="throw" class="controlBtn throwBtn" aria-label="رمي">📦</button>
-    <button id="water" class="controlBtn waterBtn" aria-label="ماء">💧</button>
-    <button id="light" class="controlBtn lightBtn" aria-label="نور">💡</button>
-  </div>
+  <footer>بسيطة وسريعة — لو تحب أجمّلها بصور/أصوات أقوم بذلك</footer>
+</div>
 
 <script>
-/* Final single-file game.
-   - Password: pizza2025
-   - No external files, all sounds via Web Audio API
-   - Mobile buttons + keyboard
+/* لعبة Canvas بسيطة: جمع بيتزا وتجنّب السارق.
+   التعليمات: انسخ الكود كاملًا في ملف index.html وافتحه.
 */
 
-const PASSWORD = "pizza2025";
-
-/* Audio */
-let audioCtx = null;
-let musicInterval = null;
-function initAudio(){
-  if(audioCtx) return;
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-}
-function playTone(freq, dur=0.12, type='sine', vol=0.12){
-  if(!audioCtx) return;
-  const o = audioCtx.createOscillator();
-  const g = audioCtx.createGain();
-  o.type = type;
-  o.frequency.setValueAtTime(freq, audioCtx.currentTime);
-  g.gain.setValueAtTime(vol, audioCtx.currentTime);
-  o.connect(g); g.connect(audioCtx.destination);
-  o.start(audioCtx.currentTime);
-  o.stop(audioCtx.currentTime + dur);
-}
-function playSlip(){ playTone(720,0.09,'sawtooth',0.18); setTimeout(()=>playTone(480,0.1,'sawtooth',0.16),70); setTimeout(()=>playTone(320,0.18,'sawtooth',0.2),140); }
-function playJump(){ playTone(520,0.12,'triangle',0.18); playTone(760,0.06,'sine',0.1); }
-function playThrow(){ playTone(180,0.12,'square',0.22); setTimeout(()=>playTone(240,0.08,'square',0.14),70); }
-function playWater(){ playTone(880,0.06,'sine',0.12); playTone(980,0.06,'sine',0.08); }
-function playLight(){ playTone(1200,0.06,'sine',0.12); }
-function playHit(){ playTone(360,0.08,'square',0.22); }
-
-function startBackgroundMusic(){
-  if(!audioCtx) return;
-  if(musicInterval) clearInterval(musicInterval);
-  const melody = [196, 247, 330, 262, 294, 330, 370];
-  musicInterval = setInterval(()=>{
-    const idx = Math.floor((Date.now()/300)) % melody.length;
-    playTone(melody[idx], 0.26, 'square', 0.05);
-  }, 260);
-}
-function stopBackgroundMusic(){
-  if(musicInterval){ clearInterval(musicInterval); musicInterval = null; }
-}
-
-/* Canvas and game state */
-const canvas = document.getElementById('c');
+// إعداد القماش (canvas)
+const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-function resizeCanvas(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
+const W = canvas.width, H = canvas.height;
 
+// HUD عناصر
+const scoreEl = document.getElementById('score');
+const livesEl = document.getElementById('lives');
+const overlay = document.getElementById('overlay');
+const overlayTitle = document.getElementById('overlay-title');
+const overlayMsg = document.getElementById('overlay-msg');
+const restartBtn = document.getElementById('restart');
+const overlayRestart = document.getElementById('overlay-restart');
+const overlayShare = document.getElementById('overlay-share');
+
+// الحالة العامة
+let keys = { left:false, right:false, up:false };
 let score = 0;
-let speed = 4;
-let gameActive = false;
-let slipCooldown = 0;
+let lives = 3;
+let gameOver = false;
 
-const player = { x: 120, y: canvas.height - 220, width: 72, height: 110, vx:0, vy:0, onGround:true, color:'#22c55e' };
-const thief  = { x: canvas.width - 220, y: canvas.height - 220, width:70, height:100, color:'#ef4444', slip:0 };
+// الفيزياء الأساسية
+const gravity = 0.9;
+const groundY = H - 80;
 
-let boxes = [];
-let waters = [];
-let lightsOn = true;
-let keys = {};
+// اللاعب
+const player = {
+  x: 80,
+  y: groundY - 50,
+  w: 44,
+  h: 50,
+  vx: 0,
+  vy: 0,
+  speed: 4.2,
+  jumpPower: 15,
+  onGround: true,
+  color: '#3b82f6'
+};
 
-/* Controls */
-function bindControls(){
-  document.addEventListener('keydown', e => { keys[e.key] = true; });
-  document.addEventListener('keyup', e => { keys[e.key] = false; });
+// عناصر البيتزا المتجمعة
+let pizzas = [];
+let thieves = [];
 
-  const mapping = { left:'ArrowLeft', right:'ArrowRight', jump:' ', throw:'x', water:'z', light:'c' };
-  Object.keys(mapping).forEach(id=>{
-    const el = document.getElementById(id);
-    el.addEventListener('touchstart', ev => { ev.preventDefault(); keys[mapping[id]] = true; });
-    el.addEventListener('touchend',   ev => { ev.preventDefault(); keys[mapping[id]] = false; });
-    el.addEventListener('mousedown',  ev => { ev.preventDefault(); keys[mapping[id]] = true; });
-    el.addEventListener('mouseup',    ev => { ev.preventDefault(); keys[mapping[id]] = false; });
-    el.addEventListener('mouseleave', ev => { ev.preventDefault(); keys[mapping[id]] = false; });
-  });
+// مولد عشوائي
+function rand(min,max){ return Math.random()*(max-min)+min; }
+
+// إنشاء بيتزا
+function spawnPizza(){
+  const p = {
+    x: rand(200, W-40),
+    y: rand(40, groundY-60),
+    r: 12 + Math.floor(rand(0,8)),
+    vx: rand(-0.6,0.6),
+    vy: 0,
+    wobble: Math.random()*Math.PI*2,
+    collected:false
+  };
+  pizzas.push(p);
 }
 
-/* spawn helpers */
-function spawnBox(){
-  boxes.push({ x: player.x + player.width + 6, y: player.y + 30, vx: 12 + Math.random()*4, vy: -3, w: 56, h: 56 });
-  playThrow();
-}
-function spawnWater(){
-  waters.push({ x: player.x + player.width + 10, y: player.y + 40, life: 60 });
-  playWater();
-}
-
-/* drawing */
-function drawPizza(x,y,size=28){
-  ctx.fillStyle = "#ffb84d";
-  ctx.beginPath(); ctx.arc(x,y,size,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle = "#b32a2a";
-  ctx.beginPath(); ctx.arc(x - size*0.12, y - size*0.18, size*0.45, 0, Math.PI*2); ctx.fill();
+// إنشاء لص (enemy)
+function spawnThief(){
+  // يتحرك أفقياً ويطارد اللاعب بشكل بسيط
+  const t = {
+    x: rand(200, W-80),
+    y: groundY - 48,
+    w: 46,
+    h: 48,
+    speed: 1.6 + Math.random()*1.6,
+    dir: Math.random()<0.5?-1:1,
+    color: '#ef4444',
+    active:true
+  };
+  thieves.push(t);
 }
 
-/* game start / pass */
-const passInput = document.getElementById('pass');
-document.getElementById('enterBtn').addEventListener('click', checkPass);
-passInput.addEventListener('keyup', e => { if(e.key === 'Enter') checkPass(); });
+// تحريك اللاعب ومعالجة المدخلات
+function updatePlayer(){
+  // تحكم
+  if(keys.left) player.vx = -player.speed;
+  else if(keys.right) player.vx = player.speed;
+  else player.vx *= 0.75; // احتكاك بسيط
 
-function checkPass(){
-  if(passInput.value === PASSWORD){
-    document.getElementById('passwordScreen').style.display = 'none';
-    if(!audioCtx) initAudio();
-    startBackgroundMusic();
-    bindControls();
-    startGame();
-  } else {
-    alert('كلمة السر غلط — جرب تاني');
-  }
-}
-
-/* main start */
-function startGame(){
-  gameActive = true;
-  score = 0;
-  speed = 4;
-  boxes = []; waters = [];
-  slipCooldown = 0;
-  player.x = 120; player.y = canvas.height - 220; player.vy = 0; player.onGround = true;
-  thief.x = canvas.width - 220; thief.y = canvas.height - 220; thief.slip = 0;
-  requestAnimationFrame(loop);
-}
-
-/* main loop */
-function loop(){
-  if(!gameActive) return;
-
-  // input
-  if(keys['ArrowRight'] || keys['د']) player.x += 8;
-  if(keys['ArrowLeft']  || keys['ا']) player.x -= 8;
-  if((keys[' '] || keys['ArrowUp'] || keys['و']) && player.onGround){
-    player.vy = -18;
+  // قفز
+  if(keys.up && player.onGround){
+    player.vy = -player.jumpPower;
     player.onGround = false;
-    playJump();
   }
-  if((keys['x'] || keys['س']) && Math.random() < 0.16){ spawnBox(); keys['x']=false; keys['س']=false; }
-  if((keys['z'] || keys['ز']) && Math.random() < 0.22){ spawnWater(); keys['z']=false; keys['ز']=false; }
-  if((keys['c'] || keys['ع'])){ keys['c']=false; keys['ع']=false; lightsOn = !lightsOn; playLight(); }
 
-  // physics
-  player.vy += 1.2;
+  // فيزياء
+  player.vy += gravity*0.6;
+  player.x += player.vx;
   player.y += player.vy;
-  const groundY = canvas.height - 180;
-  if(player.y >= groundY){ player.y = groundY; player.vy = 0; player.onGround = true; }
 
-  if(player.x < 8) player.x = 8;
-  if(player.x + player.width > canvas.width - 8) player.x = canvas.width - 8 - player.width;
+  // حدود الشاشة
+  if(player.x < 10) player.x = 10;
+  if(player.x + player.w > W-10) player.x = W - 10 - player.w;
 
-  // thief
-  thief.x -= speed;
-  if(thief.slip > 0){ thief.slip--; thief.x -= 4; }
-  if(thief.x < -120){
-    thief.x = canvas.width + 120;
-    speed += 0.5;
-    score += 500;
-    playSlip();
+  // ارتطام بالأرض
+  if(player.y + player.h >= groundY){
+    player.y = groundY - player.h;
+    player.vy = 0;
+    player.onGround = true;
   }
+}
 
-  // update boxes
-  for(let i = boxes.length -1; i >=0; i--){
-    const b = boxes[i];
-    b.x += b.vx; b.vy += 0.6; b.y += b.vy;
-    if(b.x > thief.x && b.x < thief.x + thief.width && Math.abs(b.y - thief.y) < 80){
-      thief.slip = 90; score += 100; playHit(); boxes.splice(i,1); continue;
+// تحديث البيتزا
+function updatePizzas(){
+  for(let i=pizzas.length-1;i>=0;i--){
+    const p = pizzas[i];
+    p.wobble += 0.08;
+    p.x += p.vx;
+    if(p.x < 20 || p.x > W-20) p.vx *= -1;
+
+    // تراكب مع اللاعب = جمع
+    const dx = (player.x + player.w/2) - p.x;
+    const dy = (player.y + player.h/2) - p.y;
+    const dist = Math.hypot(dx,dy);
+    if(dist < p.r + Math.max(player.w, player.h)/2){
+      // جمع
+      pizzas.splice(i,1);
+      score += 1;
+      scoreEl.textContent = score;
+      // كلما جمعت بيتزا نعمل واحد ثاني بفترة قصيرة
+      setTimeout(spawnPizza, 900);
+      // أحيانًا نضيف لص جديد ليزيد التحدي
+      if(Math.random() < 0.25) spawnThief();
     }
-    if(b.y > canvas.height + 50 || b.x > canvas.width + 200) boxes.splice(i,1);
   }
+}
 
-  // update waters
-  for(let i = waters.length -1; i >=0; i--){
-    const w = waters[i];
-    w.life--;
-    if(w.x < thief.x + 120 && w.x > thief.x - 80){
-      thief.slip = 100; score += 150; playHit();
+// تحديث اللصوص
+function updateThieves(){
+  for(let t of thieves){
+    if(!t.active) continue;
+    // يتحرك باتجاه اللاعب
+    if(player.x + player.w/2 < t.x + t.w/2) t.x -= t.speed;
+    else t.x += t.speed;
+
+    // حدود
+    if(t.x < 10) t.x = 10;
+    if(t.x + t.w > W-10) t.x = W-10 - t.w;
+
+    // تصادم مع اللاعب => يفقد حياة
+    if(rectIntersect(player.x,player.y,player.w,player.h, t.x, t.y, t.w, t.h)){
+      // مؤقت تفادي تكرار الخسارة فورًا
+      t.active = false;
+      loseLife();
+      // يعاود الظهور بعد ثانية ونصف
+      setTimeout(()=>{ t.active = true; t.x = rand(100, W-120); }, 1400);
     }
-    if(w.life <= 0) waters.splice(i,1);
+  }
+}
+
+// دالة فحص مستطيلات
+function rectIntersect(x1,y1,w1,h1, x2,y2,w2,h2){
+  return !(x1+w1 < x2 || x1 > x2+w2 || y1+h1 < y2 || y1 > y2+h2);
+}
+
+// فقدان حياة
+function loseLife(){
+  lives -= 1;
+  livesEl.textContent = lives;
+  // تأثير بصري/صوت (لو أردت تضيف الأصوات لاحقاً)
+  if(lives <= 0){
+    endGame();
+  }
+}
+
+// نهاية اللعبة
+function endGame(){
+  gameOver = true;
+  overlay.style.display = 'flex';
+  overlayTitle.textContent = 'انتهت اللعبة';
+  overlayMsg.textContent = `حصلت على ${score} نقطة. (اضغط إعادة للّعب)`;
+}
+
+// إعادة الضبط والبدء
+function resetGame(){
+  score = 0;
+  lives = 3;
+  scoreEl.textContent = score;
+  livesEl.textContent = lives;
+  pizzas = [];
+  thieves = [];
+  player.x = 80; player.y = groundY - player.h; player.vx = 0; player.vy = 0; player.onGround = true;
+  overlay.style.display = 'none';
+  gameOver = false;
+  // ابدأ مع 3 بيتز و1 لص
+  for(let i=0;i<3;i++) spawnPizza();
+  spawnThief();
+}
+
+// رسم اللاعب
+function drawPlayer(){
+  ctx.save();
+  ctx.translate(player.x + player.w/2, player.y + player.h/2);
+  // جسم
+  ctx.fillStyle = player.color;
+  roundRect(ctx, -player.w/2, -player.h/2, player.w, player.h, 6, true, false);
+  // وجه (عيون)
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(-8, -6, 5, 5);
+  ctx.fillRect(4, -6, 5, 5);
+  ctx.restore();
+}
+
+// رسم بيتزا
+function drawPizza(p){
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  // قاعدة البيتزا (دائرة)
+  ctx.beginPath();
+  ctx.fillStyle = '#fdd835';
+  ctx.arc(0,0,p.r,0,Math.PI*2);
+  ctx.fill();
+  // رشة صوص - مثلث
+  ctx.beginPath();
+  ctx.fillStyle = '#f97316';
+  ctx.moveTo(-p.r*0.4, p.r*0.1);
+  ctx.lineTo(0, p.r*0.8);
+  ctx.lineTo(p.r*0.4, p.r*0.1);
+  ctx.closePath();
+  ctx.fill();
+  // قطع (pepperoni)
+  for(let i=0;i<3;i++){
+    const a = i * Math.PI*2/3 + p.wobble*0.4;
+    const rx = Math.cos(a)*(p.r*0.45);
+    const ry = Math.sin(a)*(p.r*0.45);
+    ctx.beginPath();
+    ctx.fillStyle = '#b91c1c';
+    ctx.arc(rx,ry,p.r*0.22,0,Math.PI*2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+// رسم لص
+function drawThief(t){
+  ctx.save();
+  ctx.translate(t.x, t.y);
+  // جسم
+  ctx.fillStyle = t.color;
+  roundRect(ctx, 0, 0, t.w, t.h, 6, true, false);
+  // قناع بسيط
+  ctx.fillStyle = '#000';
+  ctx.fillRect(6, 8, t.w-12, 10);
+  ctx.restore();
+}
+
+// مستطيل منحنٍ
+function roundRect(ctx,x,y,w,h,r,fill,stroke){
+  if(typeof r === 'undefined') r = 5;
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+  if(fill) ctx.fill();
+  if(stroke) ctx.stroke();
+}
+
+// رسم المشهد
+function render(){
+  // خلفية
+  ctx.clearRect(0,0,W,H);
+  // سماء بسيطة (غير ضروري)
+  const grd = ctx.createLinearGradient(0,0,0,H);
+  grd.addColorStop(0, '#071227');
+  grd.addColorStop(1, '#001827');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0,0,W,H);
+
+  // بعض أبراج/مدينة صغيرة (ديكور)
+  for(let i=0;i<6;i++){
+    const bx = i*(W/6);
+    ctx.fillStyle = 'rgba(255,255,255,0.02)';
+    ctx.fillRect(bx+40, 40, 30, 80 + (i%3)*20);
   }
 
-  if(slipCooldown > 0) slipCooldown--;
-  if(thief.slip > 20 && slipCooldown <= 0){
-    playSlip(); slipCooldown = 50;
+  // الأرض
+  ctx.fillStyle = '#0b1220';
+  ctx.fillRect(0, groundY, W, H-groundY);
+  ctx.fillStyle = '#1f2937';
+  ctx.fillRect(0, groundY+30, W, H-groundY-30);
+
+  // رسومات البيتزا
+  for(let p of pizzas) drawPizza(p);
+
+  // رسومات اللصوص
+  for(let t of thieves) {
+    if(t.active) drawThief(t);
+    else {
+      // مؤشر مصاب (فلاش)
+      ctx.save();
+      ctx.globalAlpha = 0.4;
+      drawThief(t);
+      ctx.restore();
+    }
   }
 
-  // draw
-  drawScene();
+  // اللاعب
+  drawPlayer();
+}
 
-  // collision player/thief - end game
-  if(player.x + player.width > thief.x && player.x < thief.x + thief.width && Math.abs(player.y - thief.y) < 120){
-    gameActive = false;
-    stopBackgroundMusic();
-    playHit(); setTimeout(()=>playHit(),180); setTimeout(()=>playHit(),360);
-    document.getElementById('final').innerText = score;
-    document.getElementById('gameOver').style.display = 'flex';
-    return;
-  }
+// اللوب الرئيسي
+let last = 0;
+function loop(ts){
+  if(gameOver) return;
+  const dt = Math.min(40, ts - last);
+  last = ts;
 
-  document.getElementById('score').innerText = score;
+  // تحديثات
+  updatePlayer();
+  updatePizzas();
+  updateThieves();
+
+  // رسم
+  render();
+
   requestAnimationFrame(loop);
 }
 
-/* drawing scene */
-function drawScene(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  // background gradient
-  const g = ctx.createLinearGradient(0,0,0,canvas.height);
-  g.addColorStop(0,'#07101a'); g.addColorStop(1,'#02060a');
-  ctx.fillStyle = g; ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  // floor
-  ctx.fillStyle = '#3a2b1f';
-  ctx.fillRect(0, canvas.height - 180, canvas.width, 180);
-
-  // floor tiles
-  for(let i=0;i<canvas.width;i+=120){
-    ctx.fillStyle = '#5c4635';
-    ctx.fillRect(i, canvas.height - 260, 80, 80);
-  }
-
-  // boxes
-  boxes.forEach(b=>{
-    ctx.fillStyle = '#7a2f18'; ctx.fillRect(b.x,b.y,b.w,b.h);
-    ctx.fillStyle = '#ffda77'; ctx.fillRect(b.x+8,b.y+8,b.w-16,b.h-16);
-  });
-
-  // waters
-  waters.forEach(w=>{
-    for(let k=0;k<8;k++){
-      ctx.fillStyle = 'rgba(0,150,255,0.35)';
-      ctx.fillRect(w.x + (Math.random()*40-20), player.y + 30 + k*6, 6, 18);
-    }
-  });
-
-  // player
-  ctx.fillStyle = player.color; ctx.fillRect(player.x, player.y, player.width, player.height);
-  ctx.fillStyle = '#fff'; ctx.fillRect(player.x + 14, player.y + 16, 44, 44);
-  drawPizza(player.x + player.width/2, player.y - 22, 28);
-
-  // thief
-  ctx.fillStyle = thief.color; ctx.fillRect(thief.x, thief.y, thief.width, thief.height);
-  ctx.fillStyle = '#000'; ctx.fillRect(thief.x + 12, thief.y + 14, 38, 38);
-  ctx.fillStyle = '#fff'; ctx.fillRect(thief.x + 22, thief.y + 24, 18, 18);
-  drawPizza(thief.x + thief.width/2, thief.y - 26, 32);
-
-  // darkness / light hole
-  if(!lightsOn){
-    ctx.fillStyle = 'rgba(0,0,0,0.72)'; ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.save(); ctx.beginPath();
-    ctx.arc(player.x + player.width/2, player.y + player.height/2, Math.min(260, canvas.width*0.35), 0, Math.PI*2);
-    ctx.clip();
-    // redraw small part so it looks like a light hole
-    ctx.fillStyle = '#5c4635'; ctx.fillRect(0, canvas.height - 260, canvas.width, 260);
-    ctx.restore();
-  }
-}
-
-/* cleanup */
-window.addEventListener('beforeunload', ()=>{
-  stopBackgroundMusic();
-  if(musicInterval) clearInterval(musicInterval);
+// إدخال الكيبورد
+window.addEventListener('keydown', (e)=>{
+  if(e.key === 'ArrowLeft' || e.key === 'a') keys.left = true;
+  if(e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
+  if(e.key === 'ArrowUp' || e.key === 'w' || e.key === ' ') keys.up = true;
+  // منع السحب الافتراضي للمساحة
+  if(e.key === ' '){ e.preventDefault(); }
 });
+window.addEventListener('keyup', (e)=>{
+  if(e.key === 'ArrowLeft' || e.key === 'a') keys.left = false;
+  if(e.key === 'ArrowRight' || e.key === 'd') keys.right = false;
+  if(e.key === 'ArrowUp' || e.key === 'w' || e.key === ' ') keys.up = false;
+});
+
+// أزرار HUD
+restartBtn.addEventListener('click', ()=>{ resetGame(); last = performance.now(); requestAnimationFrame(loop); });
+overlayRestart.addEventListener('click', ()=>{ resetGame(); last = performance.now(); requestAnimationFrame(loop); });
+overlayShare.addEventListener('click', ()=>{
+  // نسخ نص بسيط للمشاركة (يمكن تطويره لاحقاً)
+  const txt = `لعبتي: Pizza Thief — نقطة: ${score}. العب الآن!`;
+  navigator.clipboard?.writeText(txt).then(()=>{ alert('نُسخ رابط المشاركة/النص.'); }, ()=>{ alert('لم يتمكن المتصفح من النسخ.'); });
+});
+
+// بدء أولي
+resetGame();
+last = performance.now();
+requestAnimationFrame(loop);
+
+// إضافة بيتزا جديدة تلقائياً أحيانًا
+setInterval(()=>{
+  if(!gameOver && pizzas.length < 5) spawnPizza();
+}, 3000);
 
 </script>
 </body>
